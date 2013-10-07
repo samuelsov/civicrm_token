@@ -12,66 +12,66 @@
  */
 
 /**
- * Implementation of hook_token_list().
+ * Implementation of hook_token_info().
  */
-function civicrm_token_token_list($type = 'all') {
-  $tokens = array();
-  
-  if ($type == 'contact' || $type == 'all') {
+function civicrm_token_token_info() {
 
-    $civicrm_root = drupal_get_path('module', 'civicrm') . '/..';    
-    require_once $civicrm_root . '/civicrm.config.php';
-    require_once $civicrm_root . '/CRM/Core/Config.php';
-    require_once $civicrm_root . '/api/v2/Contact.php';
+  civicrm_initialize(TRUE);
 
-    // Contact tokens
-    $contactFields =& CRM_Contact_DAO_Contact::fields( );
-    foreach ($contactFields as $field) {
-      if ($field['export']) {
-        $tokens['contact'][$field['name']] = $field['title'];
-      }
+  // Contact tokens
+  $contactFields =& CRM_Contact_DAO_Contact::fields( );
+  foreach ($contactFields as $field) {
+    if ($field['export']) {
+      $info['tokens']['user']['civicrm_'.$field['name']] = array(
+        'name' => $field['title']
+      );
     }
-    
-    // Address tokens
-    $addressFields =& CRM_Core_DAO_Address::fields( );
-    foreach ($addressFields as $field) {
-      if ($field['export']) {
-        $tokens['contact']['address_'.$field['name']] = $field['title'];
-      }
-    }
-    
-    // Email tokens
-    $emailFields =& CRM_Core_DAO_Email::fields( );
-    foreach ($emailFields as $field) {
-      if ($field['export']) {
-        $tokens['contact']['email_'.$field['name']] = $field['title'];
-      }
-    }
-    
-    // Phone tokens
-    $phoneFields =& CRM_Core_DAO_Phone::fields( );
-    foreach ($phoneFields as $field) {
-      if ($field['export']) {
-        $tokens['contact']['phone_'.$field['name']] = $field['title'];
-      }
-    }
-    
   }
-
-  return $tokens;
+    
+  // Address tokens
+  $addressFields =& CRM_Core_DAO_Address::fields( );
+  foreach ($addressFields as $field) {
+    if ($field['export']) {
+      $info['tokens']['user']['civicrm_address_'.$field['name']] = array(
+        'name' => $field['title']
+      );
+    }
+  }
+    
+  // Email tokens
+  $emailFields =& CRM_Core_DAO_Email::fields( );
+  foreach ($emailFields as $field) {
+    if ($field['export']) {
+      $info['tokens']['user']['civicrm_email_'.$field['name']] = array(
+        'name' => $field['title']
+      );
+    }
+  }
+    
+  // Phone tokens
+  $phoneFields =& CRM_Core_DAO_Phone::fields( );
+  foreach ($phoneFields as $field) {
+    if ($field['export']) {
+      $info['tokens']['user']['civicrm_phone_'.$field['name']] = array(
+        'name' => $field['title']
+      );
+    }
+  }
+  
+  return $info;  
 }
 
 /**
  * Implementation of hook_token_values().
  */
-function civicrm_token_token_values($type, $object = NULL) {
+function civicrm_token_tokens($type, $tokens, array $data = array(), array $options = array()) {
   $values = array();
-  switch ($type) {
-    case 'contact':
+
+  if ($type == 'user' && !empty($data['user'])) {
+      civicrm_initialize(TRUE);
+
       $contact = (object)$object;
       
-      // TODO remove
-//      dpm($contact);
       
       if ( $contact->id ) { 
         // Contact tokens.
@@ -79,7 +79,7 @@ function civicrm_token_token_values($type, $object = NULL) {
         $contactFields =& CRM_Contact_DAO_Contact::fields( );
         foreach ($contactFields as $field) {
           if ($field['export']) {
-            $values[$field['name']] = $contact->$field['name'];
+            $values['civicrm_'.$field['name']] = $contact->$field['name'];
           }
         }        
         
@@ -100,7 +100,7 @@ function civicrm_token_token_values($type, $object = NULL) {
             $addressFields =& CRM_Core_DAO_Address::fields( );        
             foreach ($addressFields as $field) {
               if ($field['export']) {
-                $values['address_'. $field['name']] = $address->$field['name'];
+                $values['civicrm_address_'. $field['name']] = $address->$field['name'];
               }
             }
           }
@@ -123,7 +123,7 @@ function civicrm_token_token_values($type, $object = NULL) {
             $phoneFields =& CRM_Core_DAO_Phone::fields( );            
             foreach ($phoneFields as $field) {
               if ($field['export']) {
-                $values['phone_'. $field['name']] = $phone->$field['name'];
+                $values['civicrm_phone_'. $field['name']] = $phone->$field['name'];
               }
             }
           }
@@ -146,15 +146,13 @@ function civicrm_token_token_values($type, $object = NULL) {
             $emailFields =& CRM_Core_DAO_Email::fields( );
             foreach ($emailFields as $field) {
               if ($field['export']) {
-                $values['email_'. $field['name']] = $email->$field['name'];
+                $values['civicrm_email_'. $field['name']] = $email->$field['name'];
               }
             }
           }          
         }
         
       }
-      // TODO add more...      
-      break;      
   }
   
   // TODO remove all this code when and if CiviCRM fixes bugs where NULL values are set to "null"
